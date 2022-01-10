@@ -1,4 +1,4 @@
-// Package men_buffer
+// Package mem
 /*
  * Version: 1.0.0
  * Copyright (c) 2021. Pashifika
@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package men_buffer
+package mem
 
 import (
 	"fmt"
