@@ -19,5 +19,5 @@ package util
 
 //goland:noinspection GoUnusedExportedFunction
 func Version() string {
-	return "v0.1.3"
+	return "v0.2.0"
 }

@@ -21,48 +21,41 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"sync"
 	"unicode/utf8"
 
 	"github.com/pashifika/util/conv"
 )
 
-// smallBufferSize is an initial allocation minimal capacity.
-const smallBufferSize = 64
-
-// FakeIO io.Writer + io.Reader (supported multi thread)
-type FakeIO struct {
-	buf      []byte     // buff data
-	m        sync.Mutex // multi control
-	off      int64      // current writing index
-	i        int64      // current reading index
-	prevRune int        // index of previous rune; or < 0
+// SingleFakeIO io.Writer + io.Reader
+type SingleFakeIO struct {
+	buf      []byte // buff data
+	off      int64  // current writing index
+	i        int64  // current reading index
+	prevRune int    // index of previous rune; or < 0
 }
 
-// NewBufferIO creates a FakeIO with an internal buffer
+// NewBufferIO creates a SingleFakeIO with an internal buffer
 // provided by buf.
-func NewBufferIO(size int64) *FakeIO {
+func NewSingleFakeIO(size int64) *SingleFakeIO {
 	bufSize := size
 	if bufSize <= 0 {
 		bufSize = smallBufferSize
 	}
-	return &FakeIO{buf: make([]byte, 0, bufSize), off: 0, i: 0}
+	return &SingleFakeIO{buf: make([]byte, 0, bufSize), off: 0, i: 0}
 }
 
 // Reset resets the buffer to be empty,
 // but it retains the underlying storage for use by future writes.
 // Reset is the same as Truncate(0).
 
-func (fio *FakeIO) resetAll() {
+func (fio *SingleFakeIO) resetAll() {
 	fio.buf = fio.buf[:0]
 	fio.off = 0
 	fio.i = 0
 	fio.prevRune = -1
 }
 
-func (fio *FakeIO) Reset(b []byte) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Reset(b []byte) {
 	fio.resetAll()
 	copy(fio.buf, b)
 }
@@ -70,9 +63,7 @@ func (fio *FakeIO) Reset(b []byte) {
 // Truncate discards all but the first n unread bytes from the buffer
 // but continues to use the same allocated storage.
 // It panics if n is negative or greater than the length of the buffer.
-func (fio *FakeIO) Truncate(n int64) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Truncate(n int64) {
 	if n == 0 {
 		fio.resetAll()
 		return
@@ -87,32 +78,24 @@ func (fio *FakeIO) Truncate(n int64) {
 // Size is the number of bytes available for reading via ReadAt.
 // The returned value is always the same and is not affected by calls
 // to any other method.
-func (fio *FakeIO) Size() int64 {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Size() int64 {
 	return int64(len(fio.buf))
 }
 
 // Len returns the number of bytes of the unread portion of the buffer;
 // b.Len() == len(b.Bytes()).
-func (fio *FakeIO) Len() int {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Len() int {
 	return len(fio.buf)
 }
 
 // Cap returns the capacity of the buffer's underlying byte slice, that is, the
 // total space allocated for the buffer's data.
-func (fio *FakeIO) Cap() int {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Cap() int {
 	return cap(fio.buf)
 }
 
 // Read implements the io.Reader interface.
-func (fio *FakeIO) Read(p []byte) (n int, err error) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Read(p []byte) (n int, err error) {
 	if fio.i >= int64(len(fio.buf)) {
 		return 0, io.EOF
 	}
@@ -123,13 +106,11 @@ func (fio *FakeIO) Read(p []byte) (n int, err error) {
 }
 
 // ReadAt implements the io.ReaderAt interface.
-func (fio *FakeIO) ReadAt(b []byte, off int64) (n int, err error) {
+func (fio *SingleFakeIO) ReadAt(b []byte, off int64) (n int, err error) {
 	// cannot modify state - see io.ReaderAt
 	if off < 0 {
 		return 0, errors.New("BufferIO.Reader.ReadAt: negative offset")
 	}
-	fio.m.Lock()
-	defer fio.m.Unlock()
 	if off >= int64(len(fio.buf)) {
 		return 0, io.EOF
 	}
@@ -141,9 +122,7 @@ func (fio *FakeIO) ReadAt(b []byte, off int64) (n int, err error) {
 }
 
 // ReadByte implements the io.ByteReader interface.
-func (fio *FakeIO) ReadByte() (byte, error) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) ReadByte() (byte, error) {
 	fio.prevRune = -1
 	if fio.i >= int64(len(fio.buf)) {
 		return 0, io.EOF
@@ -154,9 +133,7 @@ func (fio *FakeIO) ReadByte() (byte, error) {
 }
 
 // UnreadByte complements ReadByte in implementing the io.ByteScanner interface.
-func (fio *FakeIO) UnreadByte() error {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) UnreadByte() error {
 	if fio.i <= 0 {
 		return errors.New("BufferIO.Reader.UnreadByte: at beginning of slice")
 	}
@@ -166,9 +143,7 @@ func (fio *FakeIO) UnreadByte() error {
 }
 
 // ReadRune implements the io.RuneReader interface.
-func (fio *FakeIO) ReadRune() (ch rune, size int, err error) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) ReadRune() (ch rune, size int, err error) {
 	if fio.i >= int64(len(fio.buf)) {
 		fio.prevRune = -1
 		return 0, 0, io.EOF
@@ -184,9 +159,7 @@ func (fio *FakeIO) ReadRune() (ch rune, size int, err error) {
 }
 
 // UnreadRune complements ReadRune in implementing the io.RuneScanner interface.
-func (fio *FakeIO) UnreadRune() error {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) UnreadRune() error {
 	if fio.i <= 0 {
 		return errors.New("BufferIO.Reader.UnreadRune: at beginning of slice")
 	}
@@ -201,10 +174,8 @@ func (fio *FakeIO) UnreadRune() error {
 // Write appends the contents of p to the buffer, growing the buffer as
 // needed. The return value n is the length of p; err is always nil. If the
 // buffer becomes too large, Write will panic with ErrTooLarge.
-func (fio *FakeIO) Write(p []byte) (n int, err error) {
+func (fio *SingleFakeIO) Write(p []byte) (n int, err error) {
 	pLen := len(p)
-	fio.m.Lock()
-	defer fio.m.Unlock()
 	bufLen := len(fio.buf)
 	expLen := bufLen + pLen
 	if bufLen < expLen {
@@ -227,11 +198,9 @@ func (fio *FakeIO) Write(p []byte) (n int, err error) {
 // WriteAt writes a slice of bytes to a buffer starting at the position provided
 // The number of bytes written will be returned, or error. Can overwrite previous
 // written slices if the write ats overlap.
-func (fio *FakeIO) WriteAt(p []byte, pos int64) (n int, err error) {
+func (fio *SingleFakeIO) WriteAt(p []byte, pos int64) (n int, err error) {
 	pLen := len(p)
 	expLen := pos + int64(pLen)
-	fio.m.Lock()
-	defer fio.m.Unlock()
 	if int64(len(fio.buf)) < expLen {
 		if int64(cap(fio.buf)) < expLen {
 			newBuf := make([]byte, expLen, expLen)
@@ -248,7 +217,7 @@ func (fio *FakeIO) WriteAt(p []byte, pos int64) (n int, err error) {
 // The returned error is always nil, but is included to match bufio.Writer's
 // WriteByte. If the buffer becomes too large, WriteByte will panic with
 // ErrTooLarge.
-func (fio *FakeIO) WriteByte(c byte) error {
+func (fio *SingleFakeIO) WriteByte(c byte) error {
 	_, err := fio.Write([]byte{c})
 	return err
 }
@@ -256,7 +225,7 @@ func (fio *FakeIO) WriteByte(c byte) error {
 // WriteString appends the contents of s to the buffer, growing the buffer as
 // needed. The return value n is the length of s; err is always nil. If the
 // buffer becomes too large, WriteString will panic with ErrTooLarge.
-func (fio *FakeIO) WriteString(s string) (n int, err error) {
+func (fio *SingleFakeIO) WriteString(s string) (n int, err error) {
 	return fio.Write(conv.StringToBytes(s))
 }
 
@@ -264,7 +233,7 @@ func (fio *FakeIO) WriteString(s string) (n int, err error) {
 // buffer, returning its length and an error, which is always nil but is
 // included to match bufio.Writer's WriteRune. The buffer is grown as needed;
 // if it becomes too large, WriteRune will panic with ErrTooLarge.
-func (fio *FakeIO) WriteRune(r rune) (n int, err error) {
+func (fio *SingleFakeIO) WriteRune(r rune) (n int, err error) {
 	var buf []byte
 	// Compare as uint32 to correctly handle negative runes.
 	if uint32(r) < utf8.RuneSelf {
@@ -277,10 +246,8 @@ func (fio *FakeIO) WriteRune(r rune) (n int, err error) {
 }
 
 // WriteTo is the interface that wraps the io.WriterTo method.
-func (fio *FakeIO) WriteTo(w io.Writer) (n int64, err error) {
+func (fio *SingleFakeIO) WriteTo(w io.Writer) (n int64, err error) {
 	var in int
-	fio.m.Lock()
-	defer fio.m.Unlock()
 	in, err = w.Write(fio.buf)
 	if err == nil {
 		n = int64(in)
@@ -289,10 +256,8 @@ func (fio *FakeIO) WriteTo(w io.Writer) (n int64, err error) {
 }
 
 // ReadFrom is the interface that wraps the io.ReaderFrom method.
-func (fio *FakeIO) ReadFrom(r io.Reader) (n int64, err error) {
+func (fio *SingleFakeIO) ReadFrom(r io.Reader) (n int64, err error) {
 	var in int
-	fio.m.Lock()
-	defer fio.m.Unlock()
 	fio.resetAll()
 	in, err = r.Read(fio.buf)
 	if err == nil {
@@ -302,10 +267,7 @@ func (fio *FakeIO) ReadFrom(r io.Reader) (n int64, err error) {
 }
 
 // readSlice is like ReadBytes but returns a reference to internal buffer data.
-func (fio *FakeIO) readSlice(delim byte) (line []byte, err error) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
-
+func (fio *SingleFakeIO) readSlice(delim byte) (line []byte, err error) {
 	i := int64(bytes.IndexByte(fio.buf[fio.i:], delim))
 	end := fio.i + i + 1
 	if i < 0 {
@@ -325,7 +287,7 @@ func (fio *FakeIO) readSlice(delim byte) (line []byte, err error) {
 // it returns the data read before the error and the error itself (often io.EOF).
 // ReadBytes returns err != nil if and only if the returned data does not end in
 // delim.
-func (fio *FakeIO) ReadBytes(delim byte) (line []byte, err error) {
+func (fio *SingleFakeIO) ReadBytes(delim byte) (line []byte, err error) {
 	return fio.readSlice(delim)
 }
 
@@ -335,15 +297,13 @@ func (fio *FakeIO) ReadBytes(delim byte) (line []byte, err error) {
 // it returns the data read before the error and the error itself (often io.EOF).
 // ReadString returns err != nil if and only if the returned data does not end
 // in delim.
-func (fio *FakeIO) ReadString(delim byte) (line string, err error) {
+func (fio *SingleFakeIO) ReadString(delim byte) (line string, err error) {
 	slice, err := fio.readSlice(delim)
 	return conv.BytesToString(slice), err
 }
 
 // Seek implements the io.Seeker interface.
-func (fio *FakeIO) Seek(offset int64, whence int) (int64, error) {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Seek(offset int64, whence int) (int64, error) {
 	fio.prevRune = -1
 	var abs int64
 	switch whence {
@@ -364,9 +324,7 @@ func (fio *FakeIO) Seek(offset int64, whence int) (int64, error) {
 }
 
 // Bytes returns a slice of bytes written to the buffer.
-func (fio *FakeIO) Bytes() []byte {
-	fio.m.Lock()
-	defer fio.m.Unlock()
+func (fio *SingleFakeIO) Bytes() []byte {
 	return fio.buf
 }
 
@@ -374,19 +332,15 @@ func (fio *FakeIO) Bytes() []byte {
 // as a string. If the Buffer is a nil pointer, it returns "<nil>".
 //
 // To build strings more efficiently, see the strings.Builder type.
-func (fio *FakeIO) String() string {
+func (fio *SingleFakeIO) String() string {
 	if fio == nil {
 		// Special case, useful in debugging.
 		return "<nil>"
 	}
-	fio.m.Lock()
-	defer fio.m.Unlock()
 	return conv.BytesToString(fio.buf)
 }
 
-func (fio *FakeIO) Close() error {
-	fio.m.Lock()
+func (fio *SingleFakeIO) Close() error {
 	fio.resetAll()
-	fio.m.Unlock()
 	return nil
 }
