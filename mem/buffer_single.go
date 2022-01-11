@@ -34,8 +34,9 @@ type SingleFakeIO struct {
 	prevRune int    // index of previous rune; or < 0
 }
 
-// NewBufferIO creates a SingleFakeIO with an internal buffer
+// NewSingleFakeIO creates a SingleFakeIO with an internal buffer
 // provided by buf.
+//goland:noinspection GoUnusedExportedFunction
 func NewSingleFakeIO(size int64) *SingleFakeIO {
 	bufSize := size
 	if bufSize <= 0 {
@@ -56,7 +57,10 @@ func (fio *SingleFakeIO) resetAll() {
 }
 
 func (fio *SingleFakeIO) Reset(b []byte) {
-	fio.resetAll()
+	fio.i = 0
+	fio.prevRune = -1
+	fio.off = int64(len(b))
+	fio.buf = make([]byte, fio.off)
 	copy(fio.buf, b)
 }
 

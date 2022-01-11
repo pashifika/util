@@ -63,7 +63,10 @@ func (fio *FakeIO) resetAll() {
 func (fio *FakeIO) Reset(b []byte) {
 	fio.m.Lock()
 	defer fio.m.Unlock()
-	fio.resetAll()
+	fio.i = 0
+	fio.prevRune = -1
+	fio.off = int64(len(b))
+	fio.buf = make([]byte, fio.off)
 	copy(fio.buf, b)
 }
 
