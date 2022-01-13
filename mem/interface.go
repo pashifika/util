@@ -55,8 +55,8 @@ type FakeReader interface {
 	// WriteTo implements the io.WriterTo interface.
 	WriteTo(w io.Writer) (n int64, err error)
 
-	// Reset resets the Reader to be reading from b.
-	Reset(b []byte)
+	// ResetTo resets the Reader to be reading from b.
+	ResetTo(b []byte)
 }
 
 type FakeWriter interface {
@@ -81,7 +81,4 @@ type FakeWriter interface {
 
 	// ReadFrom implements the io.ReaderFrom interface.
 	ReadFrom(r io.Reader) (n int64, err error)
-
-	// Close implements the io.Closer interface.
-	Close() error
 }
