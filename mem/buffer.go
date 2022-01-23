@@ -496,6 +496,24 @@ func (fio *FakeIO) Seek(offset int64, whence int) (int64, error) {
 	return abs, nil
 }
 
+// SeekStart if you want to read the complete data after writing, must be used it
+func (fio *FakeIO) SeekStart() {
+	fio.lastRead = opRead
+	fio.off = 0
+}
+
+// SeekEnd if you want to continue writing data after reading, must be used it
+func (fio *FakeIO) SeekEnd() {
+	fio.lastRead = opRead
+	fio.off = int64(len(fio.buf))
+}
+
+// Close implements the io.Closer interface.
+func (fio *FakeIO) Close() error {
+	fio.Reset()
+	return nil
+}
+
 // WriteAt writes a slice of bytes to a buffer starting at the position provided
 // The number of bytes written will be returned, or error. Can overwrite previous
 // written slices if the write ats overlap.

@@ -52,11 +52,17 @@ type FakeReader interface {
 	// Seek implements the io.Seeker interface.
 	Seek(offset int64, whence int) (int64, error)
 
+	// SeekStart if you want to read the complete data after writing, must be used it
+	SeekStart()
+
 	// WriteTo implements the io.WriterTo interface.
 	WriteTo(w io.Writer) (n int64, err error)
 
 	// ResetTo resets the Reader to be reading from b.
 	ResetTo(b []byte)
+
+	// Close implements the io.Closer interface.
+	Close() error
 }
 
 type FakeWriter interface {
@@ -79,6 +85,12 @@ type FakeWriter interface {
 	// Seek implements the io.Seeker interface.
 	Seek(offset int64, whence int) (int64, error)
 
+	// SeekEnd if you want to continue writing data after reading, must be used it
+	SeekEnd()
+
 	// ReadFrom implements the io.ReaderFrom interface.
 	ReadFrom(r io.Reader) (n int64, err error)
+
+	// Close implements the io.Closer interface.
+	Close() error
 }
