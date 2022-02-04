@@ -35,9 +35,7 @@ func StringToBytes(s string) []byte {
 	if len(s) == 0 {
 		return nil
 	}
-	b := make([]byte, 0)
-	b = append(b, s...)
-	return b
+	return *(*[]byte)(unsafe.Pointer(&s))
 }
 
 // StringToBytesV2 convert string to bytes (buffered I/O)
