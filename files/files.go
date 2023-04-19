@@ -21,7 +21,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
@@ -66,7 +65,7 @@ func ByteToFile(path string, buf []byte) (err error) {
 			return
 		}
 	}
-	return ioutil.WriteFile(path, buf, 0664)
+	return os.WriteFile(path, buf, 0664)
 }
 
 // BufferToFile write buffer to file.
@@ -87,7 +86,7 @@ func BufferToFile(path string, r io.Reader) (err error) {
 
 	// make a write buffer
 	w := bufio.NewWriter(f)
-	var n int
+	var n, n2 int
 	// make a buffer to keep chunks that are read
 	buf := make([]byte, 4096)
 	for {
@@ -101,10 +100,10 @@ func BufferToFile(path string, r io.Reader) (err error) {
 		}
 
 		// write a chunk
-		if n, err = w.Write(buf[:n]); err != nil {
+		if n2, err = w.Write(buf[:n]); err != nil {
 			return
 		}
-		if n != 4096 {
+		if n != n2 {
 			err = fmt.Errorf("write chunk size error, file:%s", path)
 			return
 		}
