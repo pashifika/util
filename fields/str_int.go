@@ -25,6 +25,8 @@ import (
 
 type StrInt int
 
+func (s StrInt) Value() int { return int(s) }
+
 // MarshalJSON returns the encoded JSON string.
 func (s StrInt) MarshalJSON() ([]byte, error) {
 	return conv.StringToBytes(strconv.FormatInt(int64(s), 10)), nil
@@ -39,6 +41,8 @@ func (s *StrInt) UnmarshalJSON(data []byte) (err error) {
 }
 
 type StrInt64 int64
+
+func (s StrInt64) Value() int64 { return int64(s) }
 
 // MarshalJSON returns the encoded JSON string.
 func (s StrInt64) MarshalJSON() ([]byte, error) {
