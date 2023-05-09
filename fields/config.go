@@ -17,4 +17,4 @@
  */
 package fields
 
-const _jsonChar = "\""
+const JsonChar = "\""

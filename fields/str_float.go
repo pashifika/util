@@ -31,16 +31,18 @@ func (s StrFloat) Value() float32 { return float32(s) }
 // MarshalJSON returns the encoded JSON string.
 func (s StrFloat) MarshalJSON() ([]byte, error) {
 	str := strconv.FormatFloat(float64(s), 'g', -1, 32)
-	str = _jsonChar + str + _jsonChar
+	str = JsonChar + str + JsonChar
 	return conv.StringToBytes(str), nil
 }
 
 // UnmarshalJSON sets the value that decoded JSON.
 func (s *StrFloat) UnmarshalJSON(data []byte) (err error) {
 	str := conv.BytesToString(data)
-	str = strings.TrimPrefix(strings.TrimSuffix(str, _jsonChar), _jsonChar)
+	str = strings.TrimPrefix(strings.TrimSuffix(str, JsonChar), JsonChar)
 	v, err := strconv.ParseFloat(str, 32)
-	*s = StrFloat(v)
+	if err == nil {
+		*s = StrFloat(v)
+	}
 	return err
 }
 
@@ -51,15 +53,17 @@ func (s StrFloat64) Value() float64 { return float64(s) }
 // MarshalJSON returns the encoded JSON string.
 func (s StrFloat64) MarshalJSON() ([]byte, error) {
 	str := strconv.FormatFloat(float64(s), 'g', -1, 64)
-	str = _jsonChar + str + _jsonChar
+	str = JsonChar + str + JsonChar
 	return conv.StringToBytes(str), nil
 }
 
 // UnmarshalJSON sets the value that decoded JSON.
 func (s *StrFloat64) UnmarshalJSON(data []byte) (err error) {
 	str := conv.BytesToString(data)
-	str = strings.TrimPrefix(strings.TrimSuffix(str, _jsonChar), _jsonChar)
+	str = strings.TrimPrefix(strings.TrimSuffix(str, JsonChar), JsonChar)
 	v, err := strconv.ParseFloat(str, 64)
-	*s = StrFloat64(v)
+	if err == nil {
+		*s = StrFloat64(v)
+	}
 	return err
 }
