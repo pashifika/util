@@ -17,4 +17,10 @@
  */
 package fields
 
-const JsonChar = "\""
+const (
+	JsonChar            = "\""
+	JsonSlicePrefixChar = "["
+	JsonSliceSuffixChar = "]"
+	JsonObjetPrefixChar = "{"
+	JsonObjetSuffixChar = "}"
+)
