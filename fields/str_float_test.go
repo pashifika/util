@@ -13,10 +13,10 @@ func TestStrFloat_MarshalJSON(t *testing.T) {
 		want    []byte
 		wantErr bool
 	}{
-		{name: "test 01", s: 3.1415926535, want: []byte("3.1415927"), wantErr: false},
-		{name: "test 02", s: -3.1415926535, want: []byte("-3.1415927"), wantErr: false},
-		{name: "test 03", s: -3.1415, want: []byte("-3.1415"), wantErr: false},
-		{name: "test 04", s: 0, want: []byte("0"), wantErr: false},
+		{name: "test 01", s: 3.1415926535, want: []byte("\"3.1415927\""), wantErr: false},
+		{name: "test 02", s: -3.1415926535, want: []byte("\"-3.1415927\""), wantErr: false},
+		{name: "test 03", s: -3.1415, want: []byte("\"-3.1415\""), wantErr: false},
+		{name: "test 04", s: 0, want: []byte("\"0\""), wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -42,11 +42,11 @@ func TestStrFloat_UnmarshalJSON(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "test 01", s: 3.1415927, args: args{data: []byte("3.1415926535")}, wantErr: false},
-		{name: "test 02", s: -3.1415927, args: args{data: []byte("-3.1415926535")}, wantErr: false},
-		{name: "test 03", s: -3.1415, args: args{data: []byte("-3.1415")}, wantErr: false},
-		{name: "test 04", s: 0, args: args{data: []byte("0")}, wantErr: false},
-		{name: "test error", s: 0, args: args{data: []byte("3.1s")}, wantErr: true},
+		{name: "test 01", s: 3.1415926535, args: args{data: []byte("\"3.1415926535\"")}, wantErr: false},
+		{name: "test 02", s: -3.1415926535, args: args{data: []byte("\"-3.1415926535\"")}, wantErr: false},
+		{name: "test 03", s: -3.1415, args: args{data: []byte("\"-3.1415\"")}, wantErr: false},
+		{name: "test 04", s: 0, args: args{data: []byte("\"0\"")}, wantErr: false},
+		{name: "test error", s: 0, args: args{data: []byte("\"3.1s\"")}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -64,10 +64,10 @@ func TestStrFloat64_MarshalJSON(t *testing.T) {
 		want    []byte
 		wantErr bool
 	}{
-		{name: "test 01", s: 3.1415926535, want: []byte("3.1415926535"), wantErr: false},
-		{name: "test 02", s: -3.1415926535, want: []byte("-3.1415926535"), wantErr: false},
-		{name: "test 03", s: -3.1415, want: []byte("-3.1415"), wantErr: false},
-		{name: "test 04", s: 0, want: []byte("0"), wantErr: false},
+		{name: "test 01", s: 3.1415926535, want: []byte("\"3.1415926535\""), wantErr: false},
+		{name: "test 02", s: -3.1415926535, want: []byte("\"-3.1415926535\""), wantErr: false},
+		{name: "test 03", s: -3.1415, want: []byte("\"-3.1415\""), wantErr: false},
+		{name: "test 04", s: 0, want: []byte("\"0\""), wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -93,11 +93,11 @@ func TestStrFloat64_UnmarshalJSON(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "test 01", s: 3.1415926535, args: args{data: []byte("3.1415926535")}, wantErr: false},
-		{name: "test 02", s: -3.1415926535, args: args{data: []byte("-3.1415926535")}, wantErr: false},
-		{name: "test 03", s: -3.1415, args: args{data: []byte("-3.1415")}, wantErr: false},
-		{name: "test 04", s: 0, args: args{data: []byte("0")}, wantErr: false},
-		{name: "test error", s: 0, args: args{data: []byte("3.1s")}, wantErr: true},
+		{name: "test 01", s: 3.1415926535, args: args{data: []byte("\"3.1415926535\"")}, wantErr: false},
+		{name: "test 02", s: -3.1415926535, args: args{data: []byte("\"-3.1415926535\"")}, wantErr: false},
+		{name: "test 03", s: -3.1415, args: args{data: []byte("\"-3.1415\"")}, wantErr: false},
+		{name: "test 04", s: 0, args: args{data: []byte("\"0\"")}, wantErr: false},
+		{name: "test error", s: 0, args: args{data: []byte("\"3.1s\"")}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

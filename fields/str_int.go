@@ -19,6 +19,7 @@ package fields
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/pashifika/util/conv"
 )
@@ -29,12 +30,15 @@ func (s StrInt) Value() int { return int(s) }
 
 // MarshalJSON returns the encoded JSON string.
 func (s StrInt) MarshalJSON() ([]byte, error) {
-	return conv.StringToBytes(strconv.FormatInt(int64(s), 10)), nil
+	str := strconv.FormatInt(int64(s), 10)
+	str = _jsonChar + str + _jsonChar
+	return conv.StringToBytes(str), nil
 }
 
 // UnmarshalJSON sets the value that decoded JSON.
 func (s *StrInt) UnmarshalJSON(data []byte) (err error) {
 	str := conv.BytesToString(data)
+	str = strings.TrimPrefix(strings.TrimSuffix(str, _jsonChar), _jsonChar)
 	v, err := strconv.ParseInt(str, 10, 32)
 	*s = StrInt(v)
 	return err
@@ -46,12 +50,15 @@ func (s StrInt64) Value() int64 { return int64(s) }
 
 // MarshalJSON returns the encoded JSON string.
 func (s StrInt64) MarshalJSON() ([]byte, error) {
-	return conv.StringToBytes(strconv.FormatInt(int64(s), 10)), nil
+	str := strconv.FormatInt(int64(s), 10)
+	str = _jsonChar + str + _jsonChar
+	return conv.StringToBytes(str), nil
 }
 
 // UnmarshalJSON sets the value that decoded JSON.
 func (s *StrInt64) UnmarshalJSON(data []byte) (err error) {
 	str := conv.BytesToString(data)
+	str = strings.TrimPrefix(strings.TrimSuffix(str, _jsonChar), _jsonChar)
 	v, err := strconv.ParseInt(str, 10, 64)
 	*s = StrInt64(v)
 	return err
