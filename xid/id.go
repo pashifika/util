@@ -335,9 +335,29 @@ func (id *ID) Scan(value interface{}) (err error) {
 	}
 }
 
+// FromString returns xid string representation.
+func (id *ID) FromString(s string) error {
+	newId, err := FromString(s)
+	if err != nil {
+		return err
+	}
+	*id = newId
+	return nil
+}
+
 // IsNil Returns true if this is a "nil" ID
 func (id ID) IsNil() bool {
 	return id == nilID
+}
+
+// IsZero defines to check whether nil value or not.
+func (id ID) IsZero() bool {
+	return id.IsNil()
+}
+
+// EqualString returns both string representation.
+func (id ID) EqualString(s string) bool {
+	return id.String() == s
 }
 
 // NilID returns a zero value for `xid.ID`.
