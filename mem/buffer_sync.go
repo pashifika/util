@@ -36,6 +36,8 @@ type SyncFakeIO struct {
 	buf      []byte // contents are the bytes buf[off : len(buf)]
 	off      int64  // read at &buf[off], write at &buf[len(buf)]
 	lastRead readOp // last read operation, so that Unread* can work correctly.
+
+	ManualReset bool // don't auto reset cache
 }
 
 // Bytes returns a slice of length b.Len() holding the unread portion of the buffer.
@@ -148,7 +150,7 @@ func (fio *SyncFakeIO) tryGrowByReslice(n int) (int, bool) {
 func (fio *SyncFakeIO) grow(n int) int {
 	m := fio.len()
 	// If buffer is empty, reset to recover space.
-	if m == 0 && fio.off != 0 {
+	if m == 0 && fio.off != 0 && !fio.ManualReset {
 		fio.reset()
 	}
 	// Try to grow by means of a reslice.
@@ -275,7 +277,9 @@ func (fio *SyncFakeIO) WriteTo(w io.Writer) (n int64, err error) {
 		}
 	}
 	// SyncFakeIO is now empty; reset.
-	fio.reset()
+	if !fio.ManualReset {
+		fio.reset()
+	}
 	return n, nil
 }
 
@@ -337,7 +341,9 @@ func (fio *SyncFakeIO) Read(p []byte) (n int, err error) {
 	fio.lastRead = opInvalid
 	if fio.empty() {
 		// SyncFakeIO is empty, reset to recover space.
-		fio.reset()
+		if !fio.ManualReset {
+			fio.reset()
+		}
 		if len(p) == 0 {
 			return 0, nil
 		}
@@ -377,7 +383,9 @@ func (fio *SyncFakeIO) ReadByte() (byte, error) {
 	fio.m.Lock()
 	if fio.empty() {
 		// SyncFakeIO is empty, reset to recover space.
-		fio.reset()
+		if !fio.ManualReset {
+			fio.reset()
+		}
 		fio.m.Unlock()
 		return 0, io.EOF
 	}
@@ -397,7 +405,9 @@ func (fio *SyncFakeIO) ReadRune() (r rune, size int, err error) {
 	fio.m.Lock()
 	if fio.empty() {
 		// SyncFakeIO is empty, reset to recover space.
-		fio.reset()
+		if !fio.ManualReset {
+			fio.reset()
+		}
 		fio.m.Unlock()
 		return 0, 0, io.EOF
 	}
@@ -590,6 +600,7 @@ func (fio *SyncFakeIO) WriteAt(p []byte, pos int64) (n int, err error) {
 //
 // In most cases, new(SyncFakeIO) (or just declaring a SyncFakeIO variable) is
 // sufficient to initialize a SyncFakeIO.
+//
 //goland:noinspection GoUnusedExportedFunction
 func NewSyncFakeIO(buf []byte) *SyncFakeIO { return &SyncFakeIO{buf: buf} }
 
@@ -599,6 +610,7 @@ func NewSyncFakeIO(buf []byte) *SyncFakeIO { return &SyncFakeIO{buf: buf} }
 //
 // In most cases, new(SyncFakeIO) (or just declaring a SyncFakeIO variable) is
 // sufficient to initialize a SyncFakeIO.
+//
 //goland:noinspection GoUnusedExportedFunction
 func NewSyncFakeIOString(s string) *SyncFakeIO {
 	return &SyncFakeIO{buf: []byte(s)}

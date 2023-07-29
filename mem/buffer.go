@@ -37,6 +37,8 @@ type FakeIO struct {
 	buf      []byte // contents are the bytes buf[off : len(buf)]
 	off      int64  // read at &buf[off], write at &buf[len(buf)]
 	lastRead readOp // last read operation, so that Unread* can work correctly.
+
+	ManualReset bool // don't auto reset cache
 }
 
 // The readOp constants describe the last action performed on
@@ -135,7 +137,7 @@ func (fio *FakeIO) tryGrowByReslice(n int) (int, bool) {
 func (fio *FakeIO) grow(n int) int {
 	m := fio.Len()
 	// If buffer is empty, reset to recover space.
-	if m == 0 && fio.off != 0 {
+	if m == 0 && fio.off != 0 && !fio.ManualReset {
 		fio.Reset()
 	}
 	// Try to grow by means of a reslice.
@@ -270,7 +272,9 @@ func (fio *FakeIO) WriteTo(w io.Writer) (n int64, err error) {
 		}
 	}
 	// FakeIO is now empty; reset.
-	fio.Reset()
+	if !fio.ManualReset {
+		fio.Reset()
+	}
 	return n, nil
 }
 
@@ -318,7 +322,9 @@ func (fio *FakeIO) Read(p []byte) (n int, err error) {
 	fio.lastRead = opInvalid
 	if fio.empty() {
 		// FakeIO is empty, reset to recover space.
-		fio.Reset()
+		if !fio.ManualReset {
+			fio.Reset()
+		}
 		if len(p) == 0 {
 			return 0, nil
 		}
@@ -355,7 +361,9 @@ func (fio *FakeIO) Next(n int) []byte {
 func (fio *FakeIO) ReadByte() (byte, error) {
 	if fio.empty() {
 		// FakeIO is empty, reset to recover space.
-		fio.Reset()
+		if !fio.ManualReset {
+			fio.Reset()
+		}
 		return 0, io.EOF
 	}
 	c := fio.buf[fio.off]
@@ -372,7 +380,9 @@ func (fio *FakeIO) ReadByte() (byte, error) {
 func (fio *FakeIO) ReadRune() (r rune, size int, err error) {
 	if fio.empty() {
 		// FakeIO is empty, reset to recover space.
-		fio.Reset()
+		if !fio.ManualReset {
+			fio.Reset()
+		}
 		return 0, 0, io.EOF
 	}
 	c := fio.buf[fio.off]
