@@ -72,3 +72,15 @@ func MergeNotDuplicateFunc[E comparable, K constraints.Ordered](s []E, eq func(e
 
 	return res
 }
+
+func FilterFunc[S ~[]E, E, T any](x S, target T, cmp func(E, T) bool) (int, S) {
+	n := 0
+	arr := x[:0]
+	for _, e := range x {
+		if cmp(e, target) {
+			arr = append(arr, e)
+			n++
+		}
+	}
+	return n, arr
+}

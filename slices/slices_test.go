@@ -91,3 +91,81 @@ func TestMergeNotDuplicateFunc(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterFunc(t *testing.T) {
+	type Person struct {
+		Name string
+		Age  int
+	}
+	type args[S interface{ ~[]E }, T any, E any] struct {
+		x      S
+		target T
+		cmp    func(E, T) bool
+	}
+	type testCase[S interface{ ~[]E }, T any, E any] struct {
+		name  string
+		args  args[S, T, E]
+		want  int
+		want1 S
+	}
+	tests := []testCase[[]Person, Person, Person]{
+		{
+			name: "case 1",
+			args: args[[]Person, Person, Person]{
+				x: []Person{
+					{"Alice", 55},
+					{"Gopher1", 45},
+					{"Gopher2", 45},
+					{"Gopher", 33},
+					{"Gopher", 31},
+					{"Bob", 24},
+					{"Gopher3", 45},
+				},
+				target: Person{Name: "Gopher", Age: 0},
+				cmp: func(a Person, b Person) bool {
+					return a.Name == b.Name
+				},
+			},
+			want: 2,
+			want1: []Person{
+				{"Gopher", 33},
+				{"Gopher", 31},
+			},
+		},
+		{
+			name: "case 2",
+			args: args[[]Person, Person, Person]{
+				x: []Person{
+					{"Alice", 55},
+					{"Gopher1", 45},
+					{"Gopher2", 45},
+					{"Gopher", 33},
+					{"Gopher", 31},
+					{"Bob", 24},
+					{"Gopher3", 45},
+				},
+				target: Person{Name: "", Age: 45},
+				cmp: func(a Person, b Person) bool {
+					return a.Age == b.Age
+				},
+			},
+			want: 3,
+			want1: []Person{
+				{"Gopher1", 45},
+				{"Gopher2", 45},
+				{"Gopher3", 45},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := FilterFunc(tt.args.x, tt.args.target, tt.args.cmp)
+			if got != tt.want {
+				t.Errorf("FilterFunc() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("FilterFunc() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
